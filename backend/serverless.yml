@@ -1,0 +1,74 @@
+service: loan-eligibility-engine
+
+provider:
+  name: aws
+  runtime: provided.al2
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+
+  httpApi:
+    cors: true
+
+  environment:
+    DB_HOST: ${env:DB_HOST}
+    DB_NAME: ${env:DB_NAME}
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_PORT: "5432"
+    S3_BUCKET: ${self:custom.bucketName}
+    N8N_WEBHOOK_URL: ${env:N8N_WEBHOOK_URL}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource:
+            - arn:aws:s3:::${self:custom.bucketName}
+            - arn:aws:s3:::${self:custom.bucketName}/*
+        - Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+          Resource: "*"
+
+custom:
+  bucketName: loan-eligibility-engine-d-serverlessdeploymentbuck-ej053unykjml
+
+functions:
+  generatePresignedUrl:
+    handler: bootstrap
+    package:
+      artifact: dist/generatePresignedUrl.zip
+    events:
+      - httpApi:
+          path: /upload-url
+          method: post
+
+  processCsv:
+    handler: bootstrap
+    package:
+      artifact: dist/processCsv.zip
+    timeout: 900
+    memorySize: 1024
+    events:
+      - s3:
+          bucket: ${self:custom.bucketName}
+          event: s3:ObjectCreated:*
+          existing: true
+          rules:
+            - suffix: .csv
+
+  triggerMatching:
+    handler: bootstrap
+    package:
+      artifact: dist/triggerMatching.zip
+    timeout: 30
+    events:
+      - httpApi:
+          path: /trigger-matching
+          method: post
+
+
+package:
+  individually: true

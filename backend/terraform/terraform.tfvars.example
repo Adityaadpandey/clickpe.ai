@@ -1,0 +1,16 @@
+aws_region  = "us-east-1"
+environment = "dev"
+
+# Get these from your AWS account
+vpc_id     = "vpc-xxxxxxxxx"
+subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]
+
+# Database configuration
+postgres_version          = "17.3"
+db_instance_class         = "db.t4.micro"
+db_allocated_storage      = 20
+db_max_allocated_storage  = 100
+db_name                   = "postgres"
+db_username               = "postgres"
+db_password               = "CHANGE_ME_STRONG_PASSWORD"
+db_publicly_accessible    = true

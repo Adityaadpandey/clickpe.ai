@@ -1,0 +1,611 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "GPT-5-NANO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a loan product extraction expert.\nYour task is to read the HTML of a bank or financial institution’s web page\nand extract all personal loan products mentioned.\n\nConsider each distinct personal loan offer, variation, or named product\n(e.g. “Pre-approved Personal Loan”, “Personal Loan Top-up”, “Personal Loan (A2A)”)\nas a separate product.\n{{ $json.cleaned }}\nHTML_CONTENT_START\n\n      <-- make sure this is ONLY the raw HTML string, not a JSON wrapper\nHTML_CONTENT_END\n\nExtract the following information for EACH loan product you find:\n\n- product_name: The name of the loan product\n- provider: The bank/financial institution name (extract from URL or content)\n- interest_rate: The interest rate (as a number, e.g., 10.5 for 10.5%)\n- min_income: Minimum monthly income required (as a number)\n- min_credit_score: Minimum credit score required (as a number, if mentioned)\n- max_credit_score: Maximum credit score (if mentioned, otherwise null)\n- min_age: Minimum age requirement (as a number)\n- max_age: Maximum age requirement (if mentioned, otherwise null)\n- employment_required: true if employment is required, false otherwise\n  <-- make sure this is JUST the page URL\n\nIMPORTANT INSTRUCTIONS:\n1. If a field is not found, use reasonable defaults:\n   - min_income: 25000\n   - min_credit_score: 650\n   - min_age: 21\n   - max_age: 60\n   - employment_required: true\n\n2. Return ONLY a valid JSON array, no markdown, no explanations. Example format:\n\n[\n  {\n    \"product_name\": \"Product Name\",\n    \"provider\": \"Bank Name\",\n    \"interest_rate\": 10.5,\n    \"min_income\": 25000,\n    \"min_credit_score\": 650,\n    \"max_credit_score\": 900,\n    \"min_age\": 21,\n    \"max_age\": 60,\n    \"employment_required\": true,\n    \"source_url\": \"https://example.com\"\n  }\n]\n\nIf no loan products are found, return: {\"products\": []}\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        -160
+      ],
+      "id": "dfdb2d4f-4da6-4650-b6e3-9ff509f1a6d1",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Uas3xvdafTjnI5qX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        32
+      ],
+      "id": "015cb459-fdbf-4b8f-b8a2-b990c92aba8c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "GPT-5-NANO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a loan product extraction expert.\nYour task is to read the HTML of a bank or financial institution’s web page\nand extract all personal loan products mentioned.\n\nConsider each distinct personal loan offer, variation, or named product\n(e.g. “Pre-approved Personal Loan”, “Personal Loan Top-up”, “Personal Loan (A2A)”)\nas a separate product.\n{{ $json.cleaned }}\nHTML_CONTENT_START\n\n      <-- make sure this is ONLY the raw HTML string, not a JSON wrapper\nHTML_CONTENT_END\n\nExtract the following information for EACH loan product you find:\n\n- product_name: The name of the loan product\n- provider: The bank/financial institution name (extract from URL or content)\n- interest_rate: The interest rate (as a number, e.g., 10.5 for 10.5%)\n- min_income: Minimum monthly income required (as a number)\n- min_credit_score: Minimum credit score required (as a number, if mentioned)\n- max_credit_score: Maximum credit score (if mentioned, otherwise null)\n- min_age: Minimum age requirement (as a number)\n- max_age: Maximum age requirement (if mentioned, otherwise null)\n- employment_required: true if employment is required, false otherwise\n  <-- make sure this is JUST the page URL\n\nIMPORTANT INSTRUCTIONS:\n1. If a field is not found, use reasonable defaults:\n   - min_income: 25000\n   - min_credit_score: 650\n   - min_age: 21\n   - max_age: 60\n   - employment_required: true\n\n2. Return ONLY a valid JSON array, no markdown, no explanations. Example format:\n\n[\n  {\n    \"product_name\": \"Product Name\",\n    \"provider\": \"Bank Name\",\n    \"interest_rate\": 10.5,\n    \"min_income\": 25000,\n    \"min_credit_score\": 650,\n    \"max_credit_score\": 900,\n    \"min_age\": 21,\n    \"max_age\": 60,\n    \"employment_required\": true,\n    \"source_url\": \"https://example.com\"\n  }\n]\n\nIf no loan products are found, return: {\"products\": []}\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        224
+      ],
+      "id": "1cd75f3c-4178-4cbd-a656-f5e208f1fce0",
+      "name": "Message a model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Uas3xvdafTjnI5qX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "GPT-5-NANO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a loan product extraction expert.\nYour task is to read the HTML of a bank or financial institution’s web page\nand extract all personal loan products mentioned.\n\nConsider each distinct personal loan offer, variation, or named product\n(e.g. “Pre-approved Personal Loan”, “Personal Loan Top-up”, “Personal Loan (A2A)”)\nas a separate product.\n{{ $json.cleaned }}\nHTML_CONTENT_START\n\n      <-- make sure this is ONLY the raw HTML string, not a JSON wrapper\nHTML_CONTENT_END\n\nExtract the following information for EACH loan product you find:\n\n- product_name: The name of the loan product\n- provider: The bank/financial institution name (extract from URL or content)\n- interest_rate: The interest rate (as a number, e.g., 10.5 for 10.5%)\n- min_income: Minimum monthly income required (as a number)\n- min_credit_score: Minimum credit score required (as a number, if mentioned)\n- max_credit_score: Maximum credit score (if mentioned, otherwise null)\n- min_age: Minimum age requirement (as a number)\n- max_age: Maximum age requirement (if mentioned, otherwise null)\n- employment_required: true if employment is required, false otherwise\n  <-- make sure this is JUST the page URL\n\nIMPORTANT INSTRUCTIONS:\n1. If a field is not found, use reasonable defaults:\n   - min_income: 25000\n   - min_credit_score: 650\n   - min_age: 21\n   - max_age: 60\n   - employment_required: true\n\n2. Return ONLY a valid JSON array, no markdown, no explanations. Example format:\n\n[\n  {\n    \"product_name\": \"Product Name\",\n    \"provider\": \"Bank Name\",\n    \"interest_rate\": 10.5,\n    \"min_income\": 25000,\n    \"min_credit_score\": 650,\n    \"max_credit_score\": 900,\n    \"min_age\": 21,\n    \"max_age\": 60,\n    \"employment_required\": true,\n    \"source_url\": \"https://example.com\"\n  }\n]\n\nIf no loan products are found, return: {\"products\": []}\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        32
+      ],
+      "id": "62690052-5b51-4979-9aec-e41cbb731a82",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "Uas3xvdafTjnI5qX",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "loan_products",
+          "mode": "list",
+          "cachedResultName": "loan_products"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "employment_required": false
+          },
+          "matchingColumns": [
+            "product_name",
+            "provider"
+          ],
+          "schema": [
+            {
+              "id": "product_id",
+              "displayName": "product_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "provider",
+              "displayName": "provider",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "interest_rate",
+              "displayName": "interest_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "min_income",
+              "displayName": "min_income",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "min_credit_score",
+              "displayName": "min_credit_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "max_credit_score",
+              "displayName": "max_credit_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "min_age",
+              "displayName": "min_age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "max_age",
+              "displayName": "max_age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "employment_required",
+              "displayName": "employment_required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "crawled_at",
+              "displayName": "crawled_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -96,
+        32
+      ],
+      "id": "e284e291-f43d-4d5e-b33a-723c66980570",
+      "name": "Insert or update rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "15qowuJrky5HrHXs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from previous node\nlet data = $input.first().json.data;\n\n// Ensure it is a string\ndata = String(data);\n\n// Remove newlines and carriage returns\ndata = data.replace(/\\r?\\n|\\r/g, '');\n\n// Remove double quotes\ndata = data.replace(/\"/g, '');\n\n// Remove HTML tags (optional)\ndata = data.replace(/<[^>]*>/g, '');\n\n// Trim spaces\ndata = data.trim();\n\n// Return cleaned result\nreturn [{\n  json: {\n    cleaned: data\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -160
+      ],
+      "id": "7e1d4296-beb6-4162-a405-e1d7e98e13e3",
+      "name": "res cleanup "
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from previous node\nlet data = $input.first().json.data;\n\n// Ensure it is a string\ndata = String(data);\n\n// Remove newlines and carriage returns\ndata = data.replace(/\\r?\\n|\\r/g, '');\n\n// Remove double quotes\ndata = data.replace(/\"/g, '');\n\n// Remove HTML tags (optional)\ndata = data.replace(/<[^>]*>/g, '');\n\n// Trim spaces\ndata = data.trim();\n\n// Return cleaned result\nreturn [{\n  json: {\n    cleaned: data\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        32
+      ],
+      "id": "770181cf-400f-4b0c-935d-f75ed6a75189",
+      "name": "res cleanup"
+    },
+    {
+      "parameters": {
+        "url": "https://www.axisbank.com/retail/loans/personal-loan",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1120,
+        224
+      ],
+      "id": "87b11cd9-be58-4f9e-8146-7558b35f25c1",
+      "name": "Req to Axis Bank",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.icicibank.com/personal-banking/loans/personal-loan",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1120,
+        32
+      ],
+      "id": "5a4fa156-c574-4b5b-89de-67e02d9ca19d",
+      "name": "Req to ICICI Bank",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.hdfcbank.com/personal/borrow/popular-loans/personal-loan",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1120,
+        -160
+      ],
+      "id": "037470b5-a412-4187-93d5-5ffad2e4d524",
+      "name": "Req to HDFC Bank",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response - adapted to your actual format\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  try {\n    // 1. Get the `output` array from the response\n    const output = item.json.output || item.json;\n\n    let products = null;\n\n    if (Array.isArray(output)) {\n      // 2. Find the \"message\" object\n      const messageObj = output.find(o => o.type === 'message') || output[0];\n\n      if (messageObj && Array.isArray(messageObj.content)) {\n        // 3. Find the \"output_text\" content block\n        const textContent = messageObj.content.find(c => c.type === 'output_text') || messageObj.content[0];\n\n        if (textContent && textContent.text) {\n          const textObj = textContent.text;\n\n          // 4. In your response, textObj looks like: { products: [ ... ] }\n          if (Array.isArray(textObj.products)) {\n            products = textObj.products;\n          } else if (Array.isArray(textObj)) {\n            // fallback if in some cases the model returns an array directly\n            products = textObj;\n          }\n        }\n      }\n    }\n\n    // 5. Add each product as a separate item\n    if (products && Array.isArray(products)) {\n      for (const product of products) {\n        results.push({\n          json: {\n            product_name: product.product_name,\n            provider: product.provider,\n            interest_rate: product.interest_rate != null ? parseFloat(product.interest_rate) : null,\n            min_income: product.min_income != null ? parseFloat(product.min_income) : null,\n            min_credit_score: product.min_credit_score != null ? parseInt(product.min_credit_score) : null,\n            max_credit_score: product.max_credit_score != null ? parseInt(product.max_credit_score) : null,\n            min_age: product.min_age != null ? parseInt(product.min_age) : null,\n            max_age: product.max_age != null ? parseInt(product.max_age) : null,\n            employment_required: Boolean(product.employment_required),\n            source_url: product.source_url,\n            crawled_at: new Date().toISOString()\n          }\n        });\n      }\n    }\n\n  } catch (error) {\n    console.error('Parse error:', error.message);\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -160
+      ],
+      "id": "27e5e400-a246-4a39-9420-8c50ca0514e1",
+      "name": "Data Parsing"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response - adapted to your actual format\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  try {\n    // 1. Get the `output` array from the response\n    const output = item.json.output || item.json;\n\n    let products = null;\n\n    if (Array.isArray(output)) {\n      // 2. Find the \"message\" object\n      const messageObj = output.find(o => o.type === 'message') || output[0];\n\n      if (messageObj && Array.isArray(messageObj.content)) {\n        // 3. Find the \"output_text\" content block\n        const textContent = messageObj.content.find(c => c.type === 'output_text') || messageObj.content[0];\n\n        if (textContent && textContent.text) {\n          const textObj = textContent.text;\n\n          // 4. In your response, textObj looks like: { products: [ ... ] }\n          if (Array.isArray(textObj.products)) {\n            products = textObj.products;\n          } else if (Array.isArray(textObj)) {\n            // fallback if in some cases the model returns an array directly\n            products = textObj;\n          }\n        }\n      }\n    }\n\n    // 5. Add each product as a separate item\n    if (products && Array.isArray(products)) {\n      for (const product of products) {\n        results.push({\n          json: {\n            product_name: product.product_name,\n            provider: product.provider,\n            interest_rate: product.interest_rate != null ? parseFloat(product.interest_rate) : null,\n            min_income: product.min_income != null ? parseFloat(product.min_income) : null,\n            min_credit_score: product.min_credit_score != null ? parseInt(product.min_credit_score) : null,\n            max_credit_score: product.max_credit_score != null ? parseInt(product.max_credit_score) : null,\n            min_age: product.min_age != null ? parseInt(product.min_age) : null,\n            max_age: product.max_age != null ? parseInt(product.max_age) : null,\n            employment_required: Boolean(product.employment_required),\n            source_url: product.source_url,\n            crawled_at: new Date().toISOString()\n          }\n        });\n      }\n    }\n\n  } catch (error) {\n    console.error('Parse error:', error.message);\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        32
+      ],
+      "id": "b6bf22ac-3eeb-4ba4-a657-2904d696080d",
+      "name": "Data Parsing1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response - adapted to your actual format\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  try {\n    // 1. Get the `output` array from the response\n    const output = item.json.output || item.json;\n\n    let products = null;\n\n    if (Array.isArray(output)) {\n      // 2. Find the \"message\" object\n      const messageObj = output.find(o => o.type === 'message') || output[0];\n\n      if (messageObj && Array.isArray(messageObj.content)) {\n        // 3. Find the \"output_text\" content block\n        const textContent = messageObj.content.find(c => c.type === 'output_text') || messageObj.content[0];\n\n        if (textContent && textContent.text) {\n          const textObj = textContent.text;\n\n          // 4. In your response, textObj looks like: { products: [ ... ] }\n          if (Array.isArray(textObj.products)) {\n            products = textObj.products;\n          } else if (Array.isArray(textObj)) {\n            // fallback if in some cases the model returns an array directly\n            products = textObj;\n          }\n        }\n      }\n    }\n\n    // 5. Add each product as a separate item\n    if (products && Array.isArray(products)) {\n      for (const product of products) {\n        results.push({\n          json: {\n            product_name: product.product_name,\n            provider: product.provider,\n            interest_rate: product.interest_rate != null ? parseFloat(product.interest_rate) : null,\n            min_income: product.min_income != null ? parseFloat(product.min_income) : null,\n            min_credit_score: product.min_credit_score != null ? parseInt(product.min_credit_score) : null,\n            max_credit_score: product.max_credit_score != null ? parseInt(product.max_credit_score) : null,\n            min_age: product.min_age != null ? parseInt(product.min_age) : null,\n            max_age: product.max_age != null ? parseInt(product.max_age) : null,\n            employment_required: Boolean(product.employment_required),\n            source_url: product.source_url,\n            crawled_at: new Date().toISOString()\n          }\n        });\n      }\n    }\n\n  } catch (error) {\n    console.error('Parse error:', error.message);\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        224
+      ],
+      "id": "8f66bcbf-4d02-4301-b5ce-45b13f2af754",
+      "name": "Data Parsing2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from previous node\nlet data = $input.first().json.data;\n\n// Ensure it is a string\ndata = String(data);\n\n// Remove newlines and carriage returns\ndata = data.replace(/\\r?\\n|\\r/g, '');\n\n// Remove double quotes\ndata = data.replace(/\"/g, '');\n\n// Remove HTML tags (optional)\ndata = data.replace(/<[^>]*>/g, '');\n\n// Trim spaces\ndata = data.trim();\n\n// Return cleaned result\nreturn [{\n  json: {\n    cleaned: data\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        224
+      ],
+      "id": "b17085ee-ec7b-4f45-a67c-2552540024fc",
+      "name": "res cleanup1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Data Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Req to ICICI Bank",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Req to Axis Bank",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Req to HDFC Bank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Data Parsing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Data Parsing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "res cleanup ": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "res cleanup": {
+      "main": [
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Req to Axis Bank": {
+      "main": [
+        [
+          {
+            "node": "res cleanup1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Req to ICICI Bank": {
+      "main": [
+        [
+          {
+            "node": "res cleanup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Req to HDFC Bank": {
+      "main": [
+        [
+          {
+            "node": "res cleanup ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Parsing": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Parsing1": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Parsing2": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "res cleanup1": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b6eec493-ed23-4b34-b8c8-a057d8ef5c3e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ddbf23b42e0795148cd4fc6d2315604d70257c3605f3645d5eb2f6c1135c0faa"
+  },
+  "id": "4BrbjMq6YMafz4S4",
+  "tags": []
+}
