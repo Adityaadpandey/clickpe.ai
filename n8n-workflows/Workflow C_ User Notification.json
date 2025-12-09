@@ -1,0 +1,159 @@
+{
+  "name": "Workflow C: User Notification",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -112
+      ],
+      "id": "0f5b6090-913f-4afc-83b0-49b515c54517",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "isBodyHtml": true,
+        "subject": "={{ $json.subject }}",
+        "body": "={{ $json.html }}",
+        "fromEmail": "noreply@tixin.in",
+        "toAddresses": [
+          "={{ $json.to }}"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.awsSes",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -112
+      ],
+      "id": "ae4666da-9ed5-4f9a-8de4-9aabe0e13fbc",
+      "name": "Send an email",
+      "alwaysOutputData": false,
+      "notesInFlow": false,
+      "credentials": {
+        "aws": {
+          "id": "D05TXYVTAQ6EDsEc",
+          "name": "AWS (IAM) account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    m.match_id,\n    m.user_id,\n    m.product_id,\n    m.match_score,\n    u.email,\n    u.monthly_income,\n    u.credit_score,\n    u.employment_status,\n    u.age,\n    p.product_name,\n    p.provider,\n    p.interest_rate,\n    p.min_income,\n    p.min_credit_score,\n    p.source_url\nFROM matches m\nINNER JOIN users u ON m.user_id = u.user_id\nINNER JOIN loan_products p ON m.product_id = p.product_id\nWHERE m.notified = FALSE\nORDER BY m.user_id, m.match_score DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -144,
+        -112
+      ],
+      "id": "9c249ba5-5d89-4132-98f4-d8ada40761fc",
+      "name": "select matches table",
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "15qowuJrky5HrHXs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from previous node\nconst items = $input.all();\nif (items.length === 0) return [];\n\n// Group by user_id\nconst userMatches = {};\n\nfor (const item of items) {\n  const d = item.json;\n  const userId = d.user_id;\n\n  if (!userMatches[userId]) {\n    // Create readable name from email: \"ananya.pandey\" → \"Ananya Pandey\"\n    let name = \"Valued Customer\";\n    if (d.email) {\n      name = d.email\n        .split(\"@\")[0]\n        .split(\".\")\n        .map(n => n.charAt(0).toUpperCase() + n.slice(1))\n        .join(\" \");\n    }\n\n    userMatches[userId] = {\n      user_id: userId,\n      email: d.email,\n      user_name: name,\n      matches: [],\n      match_ids: []\n    };\n  }\n\n  // Add match record\n  userMatches[userId].matches.push({\n    product_id: d.product_id,\n    product_name: d.product_name,\n    provider: d.provider,\n    interest_rate: d.interest_rate ? parseFloat(d.interest_rate) : null,\n    match_score: d.match_score ? parseFloat(d.match_score) : 0,\n    min_income: d.min_income,\n    source_url: d.source_url || null\n  });\n\n  if (d.match_id) {\n    userMatches[userId].match_ids.push(d.match_id);\n  }\n}\n\n// ----------------------------\n// Generate Email HTML\n// ----------------------------\nfunction generateEmailHTML(user) {\n  const { user_name, matches } = user;\n\n  matches.sort((a, b) => b.match_score - a.match_score);\n\n  const productCards = matches\n    .map((m, index) => {\n      const rateTxt = m.interest_rate\n        ? `${m.interest_rate}% p.a.`\n        : \"Contact for rate\";\n\n      return `\n      <tr>\n        <td style=\"padding: 0 0 24px 0;\">\n          <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" class=\"product-card\">\n            <tr>\n              <td style=\"background: #ffffff; border: 1px solid #e5e5e5; border-radius: 2px; padding: 32px;\">\n                \n                <!-- Header Row -->\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                  <tr>\n                    <td style=\"padding-bottom: 20px;\">\n                      <div style=\"display: inline-block; background: #FF6B35; color: #ffffff; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; padding: 6px 12px; text-transform: uppercase;\">\n                        ${m.match_score}% Match\n                      </div>\n                    </td>\n                  </tr>\n                </table>\n\n                <!-- Product Name -->\n                <h2 style=\"margin: 0 0 8px 0; font-size: 22px; font-weight: 600; color: #000000; line-height: 1.3;\">\n                  ${m.product_name}\n                </h2>\n\n                <!-- Provider -->\n                <p style=\"margin: 0 0 24px 0; font-size: 14px; color: #666666;\">\n                  ${m.provider}\n                </p>\n\n                <!-- Divider -->\n                <div style=\"height: 1px; background: #e5e5e5; margin: 0 0 24px 0;\"></div>\n\n                <!-- Interest Rate -->\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                  <tr>\n                    <td style=\"padding-bottom: 20px;\">\n                      <p style=\"margin: 0 0 4px 0; font-size: 11px; color: #999999; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;\">\n                        Interest Rate\n                      </p>\n                      <p style=\"margin: 0; font-size: 24px; font-weight: 700; color: #000000;\">\n                        ${rateTxt}\n                      </p>\n                    </td>\n                  </tr>\n                </table>\n\n                ${\n                  m.source_url\n                    ? `\n                <!-- CTA Button -->\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\">\n                  <tr>\n                    <td style=\"background: #000000; border-radius: 2px; text-align: center;\">\n                      <a href=\"${m.source_url}\" style=\"display: inline-block; padding: 14px 32px; font-size: 14px; color: #ffffff; text-decoration: none; font-weight: 600; letter-spacing: 0.3px;\">\n                        VIEW DETAILS\n                      </a>\n                    </td>\n                  </tr>\n                </table>\n                `\n                    : \"\"\n                }\n\n              </td>\n            </tr>\n          </table>\n        </td>\n      </tr>`;\n    })\n    .join(\"\");\n\n  return `\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <style>\n    body {\n      margin: 0;\n      padding: 0;\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;\n      background-color: #f5f5f5;\n      -webkit-font-smoothing: antialiased;\n      -moz-osx-font-smoothing: grayscale;\n    }\n    \n    .email-container {\n      max-width: 600px;\n      margin: 0 auto;\n      background-color: #ffffff;\n    }\n    \n    .header {\n      background-color: #000000;\n      padding: 48px 40px;\n      text-align: center;\n    }\n    \n    .header h1 {\n      margin: 0 0 8px 0;\n      font-size: 28px;\n      font-weight: 700;\n      color: #ffffff;\n      letter-spacing: -0.5px;\n    }\n    \n    .header .accent {\n      color: #FF6B35;\n    }\n    \n    .header p {\n      margin: 0;\n      font-size: 14px;\n      color: #999999;\n      letter-spacing: 0.3px;\n    }\n    \n    .content {\n      padding: 48px 40px;\n      background-color: #fafafa;\n    }\n    \n    .greeting {\n      margin: 0 0 12px 0;\n      font-size: 16px;\n      color: #000000;\n      line-height: 1.6;\n    }\n    \n    .intro {\n      margin: 0 0 40px 0;\n      font-size: 14px;\n      color: #666666;\n      line-height: 1.6;\n    }\n    \n    .footer {\n      padding: 32px 40px;\n      text-align: center;\n      background-color: #ffffff;\n      border-top: 1px solid #e5e5e5;\n    }\n    \n    .footer p {\n      margin: 0;\n      font-size: 12px;\n      color: #999999;\n      line-height: 1.5;\n    }\n    \n    @media only screen and (max-width: 600px) {\n      .header {\n        padding: 32px 24px !important;\n      }\n      \n      .content {\n        padding: 32px 24px !important;\n      }\n      \n      .footer {\n        padding: 24px !important;\n      }\n      \n      .product-card td {\n        padding: 24px !important;\n      }\n    }\n  </style>\n</head>\n<body>\n  <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"background-color: #f5f5f5;\">\n    <tr>\n      <td align=\"center\" style=\"padding: 40px 20px;\">\n        \n        <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"600\" class=\"email-container\">\n          \n          <!-- Header -->\n          <tr>\n            <td class=\"header\">\n              <h1>Your <span class=\"accent\">Loan</span> Matches</h1>\n              <p>${matches.length} personalized ${matches.length === 1 ? 'option' : 'options'} available</p>\n            </td>\n          </tr>\n\n          <!-- Main Content -->\n          <tr>\n            <td class=\"content\">\n              \n              <p class=\"greeting\">Hello <strong>${user_name}</strong>,</p>\n              <p class=\"intro\">We've analyzed your profile and found the following loan options that match your requirements.</p>\n\n              <!-- Product Cards -->\n              <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                ${productCards}\n              </table>\n\n            </td>\n          </tr>\n\n          <!-- Footer -->\n          <tr>\n            <td class=\"footer\">\n              <p>This is an automated notification from your loan matching service.</p>\n              <p style=\"margin-top: 8px;\">&copy; ${new Date().getFullYear()} All rights reserved.</p>\n            </td>\n          </tr>\n\n        </table>\n\n      </td>\n    </tr>\n  </table>\n</body>\n</html>`;\n}\n\n// ----------------------------\n// Generate TEXT version\n// ----------------------------\nfunction generateEmailText(user) {\n  const { user_name, matches } = user;\n\n  matches.sort((a, b) => b.match_score - a.match_score);\n\n  let text = `Hello ${user_name},\n\nWe've analyzed your profile and found ${matches.length} loan ${matches.length === 1 ? 'option' : 'options'} that match your requirements.\n\nYOUR LOAN MATCHES\n${\"=\".repeat(50)}\n\n`;\n\n  matches.forEach((m, i) => {\n    text += `${i + 1}. ${m.product_name}\n   Provider: ${m.provider}\n   Interest Rate: ${m.interest_rate ? m.interest_rate + \"% p.a.\" : \"Contact for rate\"}\n   Match Score: ${m.match_score}%\n   ${m.source_url ? \"Details: \" + m.source_url : \"\"}\n\n`;\n  });\n\n  text += `${\"=\".repeat(50)}\n\nThis is an automated notification from your loan matching service.\n© ${new Date().getFullYear()} All rights reserved.`;\n\n  return text;\n}\n\n// ----------------------------\n// Build final output\n// ----------------------------\nconst output = [];\n\nfor (const userId in userMatches) {\n  const u = userMatches[userId];\n\n  output.push({\n    json: {\n      to: u.email,\n      subject: `${u.matches.length} Loan ${u.matches.length > 1 ? \"Matches\" : \"Match\"} Found for You`,\n      html: generateEmailHTML(u),\n      text: generateEmailText(u),\n\n      user_id: u.user_id,\n      user_name: u.user_name,\n      match_count: u.matches.length,\n      match_ids: u.match_ids,\n      top_match_score: Math.max(...u.matches.map(m => m.match_score)),\n      products: u.matches.map(m => m.product_name)\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        -112
+      ],
+      "id": "7c228cfe-7841-4fef-9ab4-d3c6ab092691",
+      "name": "crates email for the users"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE matches \nSET notified = TRUE\nWHERE match_id = ANY(ARRAY[{{ $json.match_ids.join(',') }}]);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        400,
+        -304
+      ],
+      "id": "37834ed4-b9fe-4731-b720-1159e4dc96cc",
+      "name": "flag notified = tue",
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "15qowuJrky5HrHXs",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "select matches table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an email": {
+      "main": [
+        []
+      ]
+    },
+    "select matches table": {
+      "main": [
+        [
+          {
+            "node": "crates email for the users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "crates email for the users": {
+      "main": [
+        [
+          {
+            "node": "Send an email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "flag notified = tue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "097ad640-dc69-4280-aa69-ff4ffc02a2fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ddbf23b42e0795148cd4fc6d2315604d70257c3605f3645d5eb2f6c1135c0faa"
+  },
+  "id": "dvpjJa4LdAXJDaRw",
+  "tags": []
+}

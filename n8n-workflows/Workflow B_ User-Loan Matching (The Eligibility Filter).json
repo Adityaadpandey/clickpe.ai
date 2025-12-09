@@ -1,0 +1,266 @@
+{
+  "name": "Workflow B: User-Loan Matching (The Eligibility Filter)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        368
+      ],
+      "id": "4a689e41-4e66-48e5-9c97-ecc0ef786d4e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "path": "389ab287-dee4-400e-9557-d5ef9e999d82",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        80
+      ],
+      "id": "f4115df9-a6d6-4cfe-a1fc-bd5a31fbe319",
+      "name": "Webhook",
+      "webhookId": "389ab287-dee4-400e-9557-d5ef9e999d82"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM users\nWHERE created_at >= NOW() - INTERVAL '60 minutes';\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        128
+      ],
+      "id": "f3f6b4d4-9232-43a3-9c05-f903a70f8107",
+      "name": "User table query",
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "15qowuJrky5HrHXs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "loan_products",
+          "mode": "list",
+          "cachedResultName": "loan_products"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        320
+      ],
+      "id": "e8d9f7e8-0775-4a00-acf3-fec421f9480e",
+      "name": "loan product table query",
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "15qowuJrky5HrHXs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        112,
+        224
+      ],
+      "id": "408da7a5-88e6-4ace-84d7-9870dc013856",
+      "name": "Merge both data",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code Node - Optimized Loan Matching Function\n * \n * Handles mixed input where users and products are in same array\n * Automatically separates them based on field detection\n */\n\n// Get all input items\nconst items = $input.all();\n\n// Separate users and products based on their unique fields\nconst users = [];\nconst loanProducts = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Check if this is a user (has user_id and email)\n  if (data.user_id && data.email) {\n    users.push(data);\n  }\n  // Check if this is a product (has product_id and product_name)\n  else if (data.product_id && data.product_name) {\n    loanProducts.push(data);\n  }\n}\n\n// Validate we have data\nif (users.length === 0) {\n  throw new Error(`No users found. Items processed: ${items.length}`);\n}\nif (loanProducts.length === 0) {\n  throw new Error(`No loan products found. Items processed: ${items.length}`);\n}\n\n// Configuration\nconst MAX_MATCHES_PER_USER = 5;\nconst MIN_MATCH_SCORE = 60;\n\n// ===== STAGE 1: Fast Pre-Filter =====\nfunction stage1_FastPreFilter(users, loanProducts) {\n  const potentialMatches = [];\n  \n  for (const user of users) {\n    const userIncome = parseFloat(user.monthly_income);\n    const userCredit = parseInt(user.credit_score);\n    const userAge = parseInt(user.age);\n    const hasEmployment = ['Salaried', 'Self-Employed', 'Business'].includes(user.employment_status);\n\n    for (const product of loanProducts) {\n      // Quick fail-fast checks\n      if (product.min_income && userIncome < parseFloat(product.min_income)) continue;\n      if (product.min_credit_score && userCredit < product.min_credit_score) continue;\n      if (product.max_credit_score && userCredit > product.max_credit_score) continue;\n      if (product.min_age && userAge < product.min_age) continue;\n      if (product.max_age && userAge > product.max_age) continue;\n      if (product.employment_required && !hasEmployment) continue;\n\n      // Passed all checks\n      potentialMatches.push({\n        user_id: user.user_id,\n        product_id: product.product_id,\n        user,\n        product\n      });\n    }\n  }\n  \n  return potentialMatches;\n}\n\n// ===== STAGE 2: Calculate Match Score =====\nfunction stage2_CalculateMatchScore(potentialMatches) {\n  return potentialMatches.map(match => {\n    let score = 100;\n    \n    const userIncome = parseFloat(match.user.monthly_income);\n    const userCredit = parseInt(match.user.credit_score);\n    const minIncome = parseFloat(match.product.min_income);\n    const minCredit = match.product.min_credit_score;\n    const interestRate = parseFloat(match.product.interest_rate) || 0;\n\n    // Income margin scoring\n    const incomeMargin = (userIncome - minIncome) / minIncome;\n    if (incomeMargin < 0.2) {\n      score -= 10;\n    } else if (incomeMargin > 1.0) {\n      score += 10;\n    }\n\n    // Credit score scoring\n    if (userCredit >= 750) {\n      score += 15;\n    } else if (userCredit >= 700) {\n      score += 10;\n    } else if (userCredit < 670) {\n      score -= 10;\n    }\n\n    const creditMargin = userCredit - minCredit;\n    score += Math.min(creditMargin / 10, 10);\n\n    // Interest rate scoring\n    if (interestRate > 0) {\n      if (interestRate < 10) {\n        score += 10;\n      } else if (interestRate > 11) {\n        score -= 5;\n      }\n    }\n\n    // Age bonus\n    if (match.user.age >= 30 && match.user.age <= 45) {\n      score += 5;\n    }\n\n    // Employment stability bonus\n    if (match.user.employment_status === 'Salaried') {\n      score += 5;\n    }\n\n    return {\n      user_id: match.user_id,\n      product_id: match.product_id,\n      match_score: Math.max(0, Math.min(100, score)),\n      product_name: match.product.product_name,\n      provider: match.product.provider,\n      interest_rate: match.product.interest_rate,\n      user_email: match.user.email\n    };\n  });\n}\n\n// ===== STAGE 3: Rank and Limit =====\nfunction stage3_RankAndLimit(scoredMatches, maxPerUser) {\n  const userMatches = {};\n  \n  for (const match of scoredMatches) {\n    if (!userMatches[match.user_id]) {\n      userMatches[match.user_id] = [];\n    }\n    userMatches[match.user_id].push(match);\n  }\n\n  const finalMatches = [];\n  \n  for (const userId in userMatches) {\n    const matches = userMatches[userId];\n    \n    matches.sort((a, b) => {\n      const scoreDiff = b.match_score - a.match_score;\n      if (Math.abs(scoreDiff) > 1) return scoreDiff;\n      \n      const rateA = parseFloat(a.interest_rate) || 999;\n      const rateB = parseFloat(b.interest_rate) || 999;\n      return rateA - rateB;\n    });\n\n    finalMatches.push(...matches.slice(0, maxPerUser));\n  }\n\n  return finalMatches;\n}\n\n// ===== MAIN EXECUTION =====\nconst startTime = Date.now();\n\n// Stage 1: Filter\nconst potentialMatches = stage1_FastPreFilter(users, loanProducts);\n\n// Stage 2: Score\nlet scoredMatches = stage2_CalculateMatchScore(potentialMatches);\n\n// Filter by minimum score\nscoredMatches = scoredMatches.filter(m => m.match_score >= MIN_MATCH_SCORE);\n\n// Stage 3: Rank and limit\nconst finalMatches = stage3_RankAndLimit(scoredMatches, MAX_MATCHES_PER_USER);\n\n// Stage 4: Prepare for database insert\nconst matchesForInsert = finalMatches.map(match => ({\n  user_id: match.user_id,\n  product_id: match.product_id,\n  match_score: parseFloat(match.match_score.toFixed(2))\n}));\n\nconst processingTime = Date.now() - startTime;\n\n// Log stats for debugging\nconsole.log('=== MATCHING STATS ===');\nconsole.log(`Users found: ${users.length}`);\nconsole.log(`Products found: ${loanProducts.length}`);\nconsole.log(`Total combinations: ${users.length * loanProducts.length}`);\nconsole.log(`After filtering: ${potentialMatches.length}`);\nconsole.log(`Final matches: ${matchesForInsert.length}`);\nconsole.log(`Processing time: ${processingTime}ms`);\nconsole.log(`Elimination rate: ${((1 - matchesForInsert.length / (users.length * loanProducts.length)) * 100).toFixed(2)}%`);\n\n// Return matches as n8n items (one item per match)\nreturn matchesForInsert.map(match => ({\n  json: match\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        224
+      ],
+      "id": "f9a5c405-524f-4b62-9881-988e73e762d7",
+      "name": "The Eligibility Filter",
+      "retryOnFail": true,
+      "executeOnce": false,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO matches (user_id, product_id, match_score)\nVALUES ('{{ $json.user_id }}', {{ $json.product_id }}, {{ $json.match_score }})\nON CONFLICT (user_id, product_id) \nDO UPDATE SET \n  match_score = EXCLUDED.match_score,\n  matched_at = CURRENT_TIMESTAMP;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        560,
+        224
+      ],
+      "id": "dacea53e-f091-44c8-b2ec-19452f120419",
+      "name": "Insert at matches table",
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "15qowuJrky5HrHXs",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "dvpjJa4LdAXJDaRw",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/dvpjJa4LdAXJDaRw",
+          "cachedResultName": "Workflow C: User Notification"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        224
+      ],
+      "id": "4f0d1e15-d4a6-4920-8fe9-c0461b8c8acb",
+      "name": "Call 'Workflow C: User Notification'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "User table query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "loan product table query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "User table query",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "loan product table query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User table query": {
+      "main": [
+        [
+          {
+            "node": "Merge both data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "loan product table query": {
+      "main": [
+        [
+          {
+            "node": "Merge both data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge both data": {
+      "main": [
+        [
+          {
+            "node": "The Eligibility Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "The Eligibility Filter": {
+      "main": [
+        [
+          {
+            "node": "Insert at matches table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert at matches table": {
+      "main": [
+        [
+          {
+            "node": "Call 'Workflow C: User Notification'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cad2ab32-bff7-4990-85ee-26334152eb73",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ddbf23b42e0795148cd4fc6d2315604d70257c3605f3645d5eb2f6c1135c0faa"
+  },
+  "id": "ov2GEwsqC9MwtKuc",
+  "tags": []
+}
