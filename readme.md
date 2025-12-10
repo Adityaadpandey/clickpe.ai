@@ -82,17 +82,8 @@ N8N_WEBHOOK_URL=https://your-n8n-instance/webhook/your-webhook-id
 
 ## 📋 Data Flow
 
-```
-CSV Upload → Presigned URL → S3 Storage → S3 Trigger
-    ↓
-processCsv Lambda → Parse & Store in PostgreSQL
-    ↓
-triggerMatching Lambda → n8n Webhook
-    ↓
-n8n Workflow → Query Users & Loan Products → Evaluate Eligibility
-    ↓
-Send User Notifications
-```
+![Alt text](diagram.png)
+
 
 ## 🛠️ Tech Stack
 
