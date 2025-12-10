@@ -85,6 +85,9 @@ N8N_WEBHOOK_URL=https://your-n8n-instance/webhook/your-webhook-id
 ![Alt text](diagram.png)
 
 
+## Video
+[![Watch the video](https://img.youtube.com/vi/_x56s68CWRI/1.jpg)](https://youtu.be/_x56s68CWRI)
+
 ## 🛠️ Tech Stack
 
 - **Frontend:** Next.js, TypeScript, React Hook Form, Radix UI
